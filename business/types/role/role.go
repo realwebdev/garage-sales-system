@@ -1,7 +1,10 @@
 // Package role represents the role type in the system.
 package role
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // The set of roles that can be used
 var (
@@ -40,6 +43,27 @@ func (r Role) MarshalText() ([]byte, error) {
 	return []byte(r.value), nil
 }
 
+// MarshalJson provides support for json encoding.
+func (r Role) MarshalJSON() ([]byte, error) {
+	return json.Marshal(r.value)
+}
+
+// UnmarshalJSON provides support for decoding
+func (r *Role) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	role, err := Parse(s)
+	if err != nil {
+		return err
+	}
+
+	*r = role
+	return nil
+}
+
 // Parse parses the string value and returns a role if one exists.
 func Parse(value string) (Role, error) {
 	role, exists := roles[value]
@@ -51,7 +75,7 @@ func Parse(value string) (Role, error) {
 }
 
 // MustParse parses the string value and returns a role if one
-// exists. If and error occur the function panics.
+// exists. If an error occurs the function panics.
 func MustParse(value string) Role {
 	role, err := Parse(value)
 	if err != nil {
@@ -85,4 +109,14 @@ func ParseMany(roles []string) ([]Role, error) {
 	}
 
 	return useRoles, nil
+}
+
+// Set returns a copy of the set of known roles.
+func Set()[]Role {
+	var role []Role
+	for _, r := range roles {
+		role = append(role, r)
+	}
+
+	return role
 }

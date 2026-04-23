@@ -1,7 +1,9 @@
 // Package domain represents the domain type in the system.
 package domain
 
-import "fmt"
+import (
+	"fmt"
+)
 
 var (
 	User    = newDomain("USER")
@@ -36,16 +38,19 @@ func (d Domain) Equal(d2 Domain) bool {
 }
 
 // MarshalText provides support for logging and any marshall needs.
-func(d Domain) MarshalText()([]byte, error) {
+func (d Domain) MarshalText() ([]byte, error) {
 	return []byte(d.value), nil
 }
+
+// MarshJSON provides support for api use
+// func (d Domain) MarshalJSON
 
 // =============================================================
 
 // Parse parses the string value and returns the a role if one exists.
 func Parse(value string) (Domain, error) {
 	domain, exists := domains[value]
-	if !exists{
+	if !exists {
 		return Domain{}, fmt.Errorf("invalid domain %q", value)
 	}
 
@@ -62,4 +67,3 @@ func MustParse(value string) Domain {
 
 	return domain
 }
-

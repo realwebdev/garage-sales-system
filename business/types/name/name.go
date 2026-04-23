@@ -1,3 +1,5 @@
+// TODO: Write test for remaining value objects
+// TODO: Write MarshalJSOn and UnmarshalJSON for the remaining value objects
 package name
 
 import (
