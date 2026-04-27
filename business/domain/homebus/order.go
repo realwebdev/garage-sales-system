@@ -1,5 +1,7 @@
 package homebus
 
+import "github.com/realwebdev/garage-sales-system/business/sdk/order"
+
 // DefaultOrderBy represents the default way we sort.
 var DefaultOrderBy = order.NewBy(OrderByID, order.ASC)
 
