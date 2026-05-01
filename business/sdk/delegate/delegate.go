@@ -3,7 +3,7 @@
 // is not possible
 package delegate
 
-import "github.com/ardanlabs/service/foundation/logger"
+import "github.com/realwebdev/garage-sales-system/foundation/logger"
 
 // These types are just for documentation so we know
 // what keys go where in the map.
