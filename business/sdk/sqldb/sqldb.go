@@ -18,6 +18,7 @@ import (
 )
 
 // lib/pq error codeNames
+// https://github.com/lib/pq/blob/master/error.go#L178
 const (
 	uniqueViolation = "23505"
 	undefinedTable  = "42P01"
@@ -30,6 +31,7 @@ var (
 	ErrUndefinedTable    = errors.New("undefined table")
 )
 
+// Config is the required properties to the database
 type Config struct {
 	User         string
 	Password     string
@@ -223,7 +225,7 @@ func namedQuerySlice[T any](ctx context.Context, log *logger.Logger, db sqlx.Ext
 
 // QueryStruct is a helper function executing queries that return a
 // single value to be unmarshalled into struct type where field replacement
-// is necessary
+// is necessary.
 func QueryStruct(ctx context.Context, log *logger.Logger, db sqlx.ExtContext, query string, dest any) error {
 	return namedQueryStruct(ctx, log, db, query, struct{}{}, dest, false)
 }
@@ -241,7 +243,61 @@ func NamedQueryStructUsingIn(ctx context.Context, log *logger.Logger, db sqlx.Ex
 	return namedQueryStruct(ctx, log, db, query, data, dest, true)
 }
 
-func namedQuerystruct()
+func namedQueryStruct(ctx context.Context, log *logger.Logger, db sqlx.ExtContext, query string, data any, dest any, withIn bool) (err error) {
+	q := queryString(query, data)
+
+	defer func() {
+		if err != nil {
+			log.Infoc(ctx, 6, "database.NamedQuerySlice", "query", q, "Error", err)
+		}
+	}()
+
+	ctx, span := otel.AddSpan(ctx, "business.sdk.sqldb.query", attribute.String("query", q))
+	defer span.End()
+
+	var rows *sqlx.Rows
+
+	switch withIn {
+	case true:
+		rows, err = func() (*sqlx.Rows, error) {
+			named, args, err := sqlx.Named(query, data)
+			if err != nil {
+				return nil, err
+			}
+
+			query, args, err := sqlx.In(named, args...)
+			if err != nil {
+				return nil, err
+			}
+
+			query = db.Rebind(query)
+			return db.QueryxContext(ctx, query, args...)
+
+		}()
+
+	default:
+		rows, err = sqlx.NamedQueryContext(ctx, db, query, data)
+	}
+
+	if err != nil {
+		var pqerr *pgconn.PgError
+		if errors.As(err, &pqerr) && pqerr.Code == undefinedTable {
+			return ErrUndefinedTable
+		}
+		return err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return ErrDBNotFound
+	}
+
+	if err := rows.StructScan(dest); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // queryString provides a prettty print version of the query and parameters.
 func queryString(query string, args any) string {

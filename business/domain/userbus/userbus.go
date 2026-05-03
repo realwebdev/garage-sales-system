@@ -14,7 +14,6 @@ import (
 	"github.com/ardanlabs/service/foundation/logger"
 	"github.com/google/uuid"
 	"github.com/realwebdev/garage-sales-system/business/sdk/order"
-	"github.com/realwebdev/garage-sales-system/business/types/role"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -108,7 +107,7 @@ func (b *Business) Create(ctx context.Context, actorID uuid.UUID, nu NewUser) (U
 		ID:           uuid.New(),
 		Name:         nu.Name,
 		Email:        nu.Email,
-		Roles:        cloneRoles(nu.Roles),
+		Roles:        nu.Roles,
 		PasswordHash: hash,
 		Department:   nu.Department,
 		Enabled:      true,
@@ -136,7 +135,7 @@ func (b *Business) Update(ctx context.Context, actorID uuid.UUID, usr User, uu U
 	}
 
 	if uu.Roles != nil {
-		usr.Roles = cloneRoles(uu.Roles)
+		usr.Roles = uu.Roles
 	}
 
 	if uu.Department != nil {
@@ -165,25 +164,45 @@ func (b *Business) Update(ctx context.Context, actorID uuid.UUID, usr User, uu U
 	return usr, nil
 }
 
-// Delete removes a user from the system.
+// Delete removes the specified user.
 func (b *Business) Delete(ctx context.Context, actorID uuid.UUID, usr User) error {
-	_ = actorID
-	return b.storer.Delete(ctx, usr)
+	if err := b.storer.Delete(ctx, usr); err != nil {
+		return fmt.Errorf("delete: %w", err)
+	}
+
+	// Other domains may need to know when a user is deleted so
+	// business logic can be applied. The repressents a delegate
+	// call to other domains.
+	if err := b.delegate.Call(ctx, ActionDeletedData(usr.ID)); err != nil {
+		return fmt.Errorf("failed to execute `%s` action: %w", ActionDeleted, err)
+	}
+
+	return nil
 }
 
-// Query retrieves users based on the supplied filter.
-func (b *Business) Query(ctx context.Context, filter QueryFilter, orderBy order.By, pg page.Page) ([]User, error) {
-	return b.storer.Query(ctx, filter, orderBy, pg)
+// Query retrieves a list of existing users.
+func (b *Business) Query(ctx context.Context, filter QueryFilter, orderBy order.By, page page.Page) ([]User, error) {
+	users, err := b.storer.Query(ctx, filter, orderBy, page)
+	if err != nil {
+		return nil, fmt.Errorf("query: %w", err)
+	}
+
+	return users, nil
 }
 
-// Count returns the number of matching users.
+// Count returns the total number of users.
 func (b *Business) Count(ctx context.Context, filter QueryFilter) (int, error) {
 	return b.storer.Count(ctx, filter)
 }
 
-// QueryByID retrieves a user by ID.
+// QueryByID finds the user by specified ID
 func (b *Business) QueryByID(ctx context.Context, userID uuid.UUID) (User, error) {
-	return b.storer.QueryByID(ctx, userID)
+	user, err := b.storer.QueryByID(ctx, userID)
+	if err != nil {
+		return User{}, fmt.Errorf("query: userID[%s]: %w", userID, err)
+	}
+
+	return user, nil
 }
 
 // QueryByEmail retrieves a user by email.
@@ -191,31 +210,18 @@ func (b *Business) QueryByEmail(ctx context.Context, email mail.Address) (User, 
 	return b.storer.QueryByEmail(ctx, email)
 }
 
-// Authenticate verifies a user's credentials.
+// Authenticate finds a user by their email and verifies their password. On
+// success it returns a Claims User representing this user. the claims can be
+// used to generate a token for future authentication.
 func (b *Business) Authenticate(ctx context.Context, email mail.Address, password string) (User, error) {
 	usr, err := b.storer.QueryByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return User{}, ErrAuthenticationFailure
-		}
-
-		return User{}, err
+		return User{}, fmt.Errorf("query: email[%s]: %w", email, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(password)); err != nil {
-		return User{}, ErrAuthenticationFailure
+		return User{}, fmt.Errorf("comparehashandpassword: %w", ErrAuthenticationFailure)
 	}
 
 	return usr, nil
-}
-
-func cloneRoles(roles []role.Role) []role.Role {
-	if roles == nil {
-		return nil
-	}
-
-	cloned := make([]role.Role, len(roles))
-	copy(cloned, roles)
-
-	return cloned
 }
