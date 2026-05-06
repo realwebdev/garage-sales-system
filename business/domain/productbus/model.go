@@ -36,5 +36,5 @@ type NewProduct struct {
 type UpdateProduct struct {
 	Name *name.Name
 	Cost *money.Money
-	Quantity quantity.Quantity
+	Quantity *quantity.Quantity
 }
