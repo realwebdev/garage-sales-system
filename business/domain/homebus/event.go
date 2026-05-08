@@ -1,5 +1,32 @@
 package homebus
 
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/realwebdev/garage-sales-system/business/domain/userbus"
+	"github.com/realwebdev/garage-sales-system/business/sdk/delegate"
+)
+
 // registerDelegateFunctions will register action functions with the
 // delegate system. If the business was constucted for query only, there
 // won't be a delegate provided
+func (b *Business) registerDelegateFunctions() {
+	if b.delegate != nil {
+		b.delegate.Register(userbus.DomainName, userbus.ActionDeleted, b.actionUserDeleted)
+	}
+}
+
+func (b *Business) actionUserDeleted(ctx context.Context, data delegate.Data) error {
+	var params userbus.ActionDeletedParams
+	err := json.Unmarshal(data.RawParams, &params)
+	if err != nil {
+		return fmt.Errorf("expected an encoded %T: %w", params, err)
+	}
+
+	b.log.Info(ctx, "action-userdeleted", "user_id", params.UserID)
+
+	// Now we can mark all the homes for this user as deleted.
+	return nil
+}

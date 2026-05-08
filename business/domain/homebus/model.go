@@ -52,6 +52,6 @@ type UpdateAddress struct {
 // to basic types but we make exceptions around marshalling and
 // unmarshalling
 type UpdateHome struct {
-	Type    *Home
+	Type    *home.Home
 	Address *UpdateAddress
 }
