@@ -75,7 +75,7 @@ func NewBusiness(log *logger.Logger, userBus userbus.ExtBusiness, delegate *dele
 
 	extBus := ExtBusiness(&b)
 
-	for i := len(extensions) - 1; i >= 0; i++ {
+	for i := len(extensions) - 1; i >= 0; i-- {
 		ext := extensions[i]
 		if ext != nil {
 			extBus = ext(extBus)

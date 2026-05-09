@@ -3,8 +3,12 @@ package auditbus
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/ardanlabs/service/business/sdk/page"
+	"github.com/google/uuid"
 	"github.com/realwebdev/garage-sales-system/business/sdk/order"
 	"github.com/realwebdev/garage-sales-system/foundation/logger"
 )
@@ -30,14 +34,63 @@ type Extension func(ExtBusiness) ExtBusiness
 // Business manages the set of APIs for audit access.
 type Business struct {
 	log    *logger.Logger
-	strore Storer
+	storer Storer
 }
 
 // // NewBusiness constructs a audit business API for use.
-// func NewBusiness(log *logger.Logger, storer Storer, extensions ...ExtBusiness)(ExtBusiness){
-// 	b := ExtBusiness(&Business{
-// 		log: log,
-// 		strore: storer,
-// 	})
+func NewBusiness(log *logger.Logger, storer Storer, extensions ...Extension) ExtBusiness {
+	b := ExtBusiness(&Business{
+		log:    log,
+		storer: storer,
+	})
 
-// }
+	for i := len(extensions) - 1; i >= 0; i++ {
+		ext := extensions[i]
+		if ext != nil {
+			b = ext(b)
+		}
+	}
+
+	return b
+}
+
+// Create adds a new audit record to the system.
+func (b *Business) Create(ctx context.Context, na NewAudit) (Audit, error) {
+	jsonData, err := json.Marshal(na.Data)
+	if err != nil {
+		return Audit{}, fmt.Errorf("marshall object: %w", err)
+	}
+
+	audit := Audit{
+		ID:        uuid.New(),
+		objID:     na.ObjID,
+		objDomain: na.objDomain,
+		objName:   na.objName,
+		ActorID:   na.ActorID,
+		Action:    na.Action,
+		Data:      jsonData,
+		Message:   na.Message,
+		Timestamp: time.Now(),
+	}
+
+	if err := b.storer.Create(ctx, audit); err != nil {
+		return Audit{}, fmt.Errorf("create audit: %w", err)
+	}
+
+	return audit, nil
+}
+
+// Query retrieves a list of existing audit records.
+func (b *Business) Query(ctx context.Context, filter QueryFilter, orderBy order.By, page page.Page) ([]Audit, error) {
+	audits, err := b.storer.Query(ctx, filter, orderBy, page)
+	if err != nil {
+		return nil, fmt.Errorf("query audits: %w", err)
+	}
+
+	return audits, nil
+}
+
+// Count returns the total number of users.
+func (b *Business) Count(ctx context.Context, filter QueryFilter) (int, error) {
+	return b.storer.Count(ctx, filter)
+}
