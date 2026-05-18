@@ -162,7 +162,7 @@ func QuerySlice[T any](ctx context.Context, log *logger.Logger, db sqlx.ExtConte
 // NamedQuerySlic is a helper function for executing Queries that return a
 // collection of data to be unmarshalled into a slice where field replacement
 // is necessary.
-func NamedQuerySlic[T any](ctx context.Context, log *logger.Logger, db sqlx.ExtContext, query string, data any, dest *[]T) error {
+func NamedQuerySlice[T any](ctx context.Context, log *logger.Logger, db sqlx.ExtContext, query string, data any, dest *[]T) error {
 	return namedQuerySlice(ctx, log, db, query, struct{}{}, dest, true)
 }
 
