@@ -6,7 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/mail"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/realwebdev/garage-sales-system/business/domain/userbus"
 	"github.com/realwebdev/garage-sales-system/business/sdk/order"
@@ -158,4 +160,56 @@ func (s *Store) Count(ctx context.Context, filter userbus.QueryFilter) (int, err
 	}
 
 	return count.Count, nil
+}
+
+// QueryById gets the specified user from the database
+func (s *Store) QueryByID(ctx context.Context, userID uuid.UUID) (userbus.User, error) {
+	data := struct {
+		ID string `db:"user_id"`
+	}{
+		ID: userID.String(),
+	}
+
+	const q = `
+	SELECT
+		user_id, name, email, password_hash, roles, department, enabled, date_created, date_updated
+	WHERE
+		user_id = :user_id`
+
+	var dbUsr userDB
+	if err := sqldb.NamedQueryStruct(ctx, s.log, s.db, q, data, &dbUsr); err != nil {
+		if errors.Is(err, sqldb.ErrDBNotFound) {
+			return userbus.User{}, fmt.Errorf("db: %w", userbus.ErrNotFound)
+		}
+		return userbus.User{}, fmt.Errorf("db: %w", err)
+	}
+
+	return toBusUser(dbUsr)
+}
+
+// QueryByEmail gets the specified user from the database by email.
+func (s *Store) QueryByEmail(ctx context.Context, email mail.Address) (userbus.User, error) {
+	data := struct {
+		Email string `db:"email"`
+	}{
+		Email: email.Address,
+	}
+
+	const q = `
+	SELECT
+        user_id, name, email, password_hash, roles, department, enabled, date_created, date_updated
+	FROM
+		users
+	WHERE
+		email = :email`
+
+	var dbUsr userDB
+	if err := sqldb.NamedQueryStruct(ctx, s.log, s.db, q, data, &dbUsr); err != nil {
+		if errors.Is(err, sqldb.ErrDBNotFound) {
+			return userbus.User{}, fmt.Errorf("db: %w", userbus.ErrNotFound)
+		}
+		return userbus.User{}, fmt.Errorf("db: %w", err)
+	}
+
+	return toBusUser(dbUsr)
 }

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ardanlabs/service/business/sdk/delegate"
 	"github.com/google/uuid"
+	"github.com/realwebdev/garage-sales-system/business/sdk/delegate"
 )
 
 // DomainName represents the name of this domain.

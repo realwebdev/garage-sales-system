@@ -14,9 +14,9 @@ type Product struct {
 	ID          uuid.UUID
 	UserID      uuid.UUID
 	Name        name.Name
-	UserName    name.Name
 	Cost        money.Money
-	Quanitity   quantity.Quantity
+	Quantity    quantity.Quantity
 	DateCreated time.Time
 	DateUpdated time.Time
+	UserName    name.Name
 }

@@ -13,9 +13,9 @@ import (
 // audit record.
 type Audit struct {
 	ID        uuid.UUID
-	objID     uuid.UUID
-	objDomain domain.Domain
-	objName   name.Name
+	ObjID     uuid.UUID
+	ObjDomain domain.Domain
+	ObjName   name.Name
 	ActorID   uuid.UUID
 	Action    string
 	Data      json.RawMessage
@@ -26,8 +26,8 @@ type Audit struct {
 // NewAudit represents the information needed to create a new audit record.
 type NewAudit struct {
 	ObjID     uuid.UUID
-	objDomain domain.Domain
-	objName   name.Name
+	ObjDomain domain.Domain
+	ObjName   name.Name
 	ActorID   uuid.UUID
 	Action    string
 	Data      any

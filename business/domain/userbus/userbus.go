@@ -8,12 +8,12 @@ import (
 	"net/mail"
 	"time"
 
-	"github.com/ardanlabs/service/business/sdk/delegate"
-	"github.com/ardanlabs/service/business/sdk/page"
-	"github.com/ardanlabs/service/business/sdk/sqldb"
-	"github.com/ardanlabs/service/foundation/logger"
 	"github.com/google/uuid"
+	"github.com/realwebdev/garage-sales-system/business/sdk/delegate"
 	"github.com/realwebdev/garage-sales-system/business/sdk/order"
+	"github.com/realwebdev/garage-sales-system/business/sdk/page"
+	"github.com/realwebdev/garage-sales-system/business/sdk/sqldb"
+	"github.com/realwebdev/garage-sales-system/foundation/logger"
 	"golang.org/x/crypto/bcrypt"
 )
 

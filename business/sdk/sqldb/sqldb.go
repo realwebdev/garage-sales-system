@@ -231,7 +231,7 @@ func QueryStruct(ctx context.Context, log *logger.Logger, db sqlx.ExtContext, qu
 }
 
 // NamedQueryStruct is a helper function for executing queries that return a
-// single value to be unmarshalled into a struct type wher field replacement is necessary.
+// single value to be unmarshalled into a struct type where field replacement is necessary.
 func NamedQueryStruct(ctx context.Context, log *logger.Logger, db sqlx.ExtContext, query string, data any, dest any) error {
 	return namedQueryStruct(ctx, log, db, query, data, dest, false)
 }
