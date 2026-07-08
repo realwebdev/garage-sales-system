@@ -4,9 +4,9 @@ import (
 	"embed"
 	"net/http"
 
-	"github.com/ardanlabs/service/app/sdk/auth"
-	"github.com/ardanlabs/service/app/sdk/authclient"
 	"github.com/jmoiron/sqlx"
+	"github.com/realwebdev/garage-sales-system/app/sdk/auth"
+	"github.com/realwebdev/garage-sales-system/app/sdk/authclient"
 	"github.com/realwebdev/garage-sales-system/app/sdk/mid"
 	"github.com/realwebdev/garage-sales-system/business/domain/auditbus"
 	"github.com/realwebdev/garage-sales-system/business/domain/homebus"
@@ -91,8 +91,33 @@ func WebAPI(cfg Config, routeAdder RouteAdder, options ...func(opt *Options)) ht
 	app := web.NewApp(
 		cfg.Log.Info,
 		cfg.Tracer,
-		mid
+		mid.Otel(cfg.Tracer),
+		mid.Logger(cfg.Log),
+		mid.Metrics(),
+		mid.Panics(),
 	)
+
+	var opts Options
+	for _, option := range options {
+		option(&opts)
+	}
+
+	if len(opts.coresOrigin) > 0 {
+		app.EnableCORS(opts.coresOrigin)
+	}
+
+	routeAdder.Add(app, cfg)
+
+	for _, site := range opts.sites {
+		switch site.react {
+		case true:
+			app.FileServerReact(site.static, site.staticDir, site.staticPath)
+
+		default:
+			app.FileServer(site.static, site.staticDir, site.staticPath)
+
+		}
+	}
 
 	return app
 }

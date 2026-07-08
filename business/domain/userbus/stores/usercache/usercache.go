@@ -2,8 +2,6 @@ package usercache
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/mail"
 	"time"
 
