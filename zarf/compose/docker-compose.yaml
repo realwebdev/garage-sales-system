@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  sales-api:
+    build:
+      context: ../../
+      dockerfile: zarf/docker/dockerfile.sales
+      args:
+        BUILD_REF: develop
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
