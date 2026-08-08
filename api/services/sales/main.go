@@ -11,10 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/realwebdev/garage-sales-system/app/sdk/mux"
 	"github.com/realwebdev/garage-sales-system/business/domain/userbus"
-	"github.com/realwebdev/garage-sales-system/business/domain/userbus/stores/usercache"
-	"github.com/realwebdev/garage-sales-system/business/sdk/delegate"
 	"github.com/realwebdev/garage-sales-system/business/sdk/order"
 	"github.com/realwebdev/garage-sales-system/business/sdk/page"
 	"github.com/realwebdev/garage-sales-system/business/sdk/sqldb"
@@ -43,14 +40,14 @@ func run(log *logger.Logger) error {
 	// 3. Here we use an in-memory 'mockStorer' for simple running.
 	// 4. We can wrap it in a 'usercache' (Decorator Pattern) which also implements 'Storer'.
 	// 5. 'userBus' doesn't know (or care) if it's talking to memory, cache, or a real DB.
-	
-	storer := newMockStorer()
+
+	// storer := newMockStorer()
 
 	// Optional: Wrap the storer in a cache layer.
 	// storer = usercache.NewStore(log, storer, time.Minute)
 
-	delegate := delegate.New(log)
-	userBus := userbus.NewBusiness(log, delegate, storer)
+	// delegate := delegate.New(log)
+	// userBus := userbus.NewBusiness(log, delegate, storer)
 
 	// -------------------------------------------------------------------------
 	// Start API Service
@@ -58,16 +55,14 @@ func run(log *logger.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	cfg := mux.Config{
-		Build:    "develop",
-		Log:      log,
-		Shutdown: shutdown,
-		UserBus:  userBus,
-	}
+	// cfg := mux.Config{
+	// 	Build: "develop",
+	// 	Log:   log,
+	// }
 
 	api := http.Server{
-		Addr:         ":8080",
-		Handler:      mux.WebAPI(cfg),
+		Addr: ":8080",
+		// Handler:      mux.WebAPI(cfg),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
